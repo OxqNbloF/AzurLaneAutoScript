@@ -4,6 +4,7 @@ import {PyShell} from '/@/pyshell';
 import {webuiArgs, webuiPath, dpiScaling} from '/@/config';
 
 const path = require('path');
+const isMac = process.platform === 'darwin';
 
 const isSingleInstance = app.requestSingleInstanceLock();
 
@@ -13,6 +14,8 @@ if (!isSingleInstance) {
 }
 
 app.disableHardwareAcceleration();
+// Suppress Electron's default File/Edit/View menus before macOS creates them.
+Menu.setApplicationMenu(null);
 
 // Install "Vue.js devtools"
 if (import.meta.env.MODE === 'development') {
@@ -42,7 +45,9 @@ const createWindow = async () => {
     width: 1280,
     height: 880,
     show: false, // Use 'ready-to-show' event to show window
-    frame: false,
+    // Let macOS provide its standard close, minimize, zoom, and fullscreen controls.
+    // Windows and Linux retain the existing renderer-provided title bar.
+    frame: !isMac ? false : true,
     icon: path.join(__dirname, './buildResources/icon.ico'),
     webPreferences: {
       nodeIntegration: true,
@@ -60,10 +65,6 @@ const createWindow = async () => {
    */
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
-
-    // Hide menu
-    const {Menu} = require('electron');
-    Menu.setApplicationMenu(null);
 
     if (import.meta.env.MODE === 'development') {
       mainWindow?.webContents.openDevTools();
@@ -107,38 +108,41 @@ const createWindow = async () => {
     })
   });
 
-  // Tray
-  const tray = new Tray(path.join(__dirname, 'icon.png'));
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Show',
-      click: function () {
-        mainWindow?.show();
+  // The macOS Dock is the only application entry point on macOS. Other
+  // platforms keep the existing system-tray behavior.
+  if (!isMac) {
+    const tray = new Tray(path.join(__dirname, 'icon.png'));
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Show',
+        click: function () {
+          mainWindow?.show();
+        }
+      },
+      {
+        label: 'Hide',
+        click: function () {
+          mainWindow?.hide();
+        }
+      },
+      {
+        label: 'Exit',
+        click: function () {
+          alas.kill(function () {
+            mainWindow?.close();
+          })
+        }
       }
-    },
-    {
-      label: 'Hide',
-      click: function () {
-        mainWindow?.hide();
-      }
-    },
-    {
-      label: 'Exit',
-      click: function () {
-        alas.kill(function () {
-          mainWindow?.close();
-        })
-      }
-    }
-  ]);
-  tray.setToolTip('Alas');
-  tray.setContextMenu(contextMenu);
-  tray.on('click', () => {
-    mainWindow?.isVisible() ? mainWindow?.hide() : mainWindow?.show()
-  });
-  tray.on('right-click', () => {
-    tray.popUpContextMenu(contextMenu)
-  });
+    ]);
+    tray.setToolTip('Alas');
+    tray.setContextMenu(contextMenu);
+    tray.on('click', () => {
+      mainWindow?.isVisible() ? mainWindow?.hide() : mainWindow?.show()
+    });
+    tray.on('right-click', () => {
+      tray.popUpContextMenu(contextMenu)
+    });
+  }
 };
 
 
@@ -207,4 +211,3 @@ if (import.meta.env.PROD) {
     .then(({autoUpdater}) => autoUpdater.checkForUpdatesAndNotify())
     .catch((e) => console.error('Failed check updates:', e));
 }
-

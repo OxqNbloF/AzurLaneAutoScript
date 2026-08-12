@@ -1,5 +1,5 @@
 <template>
-  <div class="app-header">
+  <div v-if="!isMac" class="app-header">
     <div class="header-drag"></div>
     <div class="header-icon">
       <ArrowDownOutlined class="icon" @click="trayWin"></ArrowDownOutlined>
@@ -23,6 +23,11 @@
       MinusOutlined,
       BorderOutlined,
       CloseOutlined,
+    },
+    computed: {
+      isMac() {
+        return process.platform === 'darwin';
+      },
     },
     methods: {
       trayWin() {
