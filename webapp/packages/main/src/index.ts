@@ -39,6 +39,7 @@ alas.end(function (err: string) {
 
 
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
 
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
@@ -55,6 +56,16 @@ const createWindow = async () => {
       nativeWindowOpen: true,
       // preload: join(__dirname, '../../preload/dist/index.cjs'),
     },
+  });
+
+  // On macOS, the red window control hides the app instead of terminating the
+  // automation. This keeps both the renderer and Python process intact until
+  // the user explicitly chooses Quit from the Dock.
+  mainWindow.on('close', (event) => {
+    if (isMac && !isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
   });
 
   /**
@@ -103,6 +114,10 @@ const createWindow = async () => {
     mainWindow?.isMaximized() ? mainWindow?.restore() : mainWindow?.maximize();
   });
   ipcMain.on('window-close', function () {
+    if (isMac) {
+      mainWindow?.hide();
+      return;
+    }
     alas.kill(function () {
       mainWindow?.close();
     })
@@ -189,6 +204,27 @@ app.on('second-instance', () => {
     if (!mainWindow.isVisible()) mainWindow.show();
     mainWindow.focus();
   }
+});
+
+
+app.on('activate', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+});
+
+
+app.on('before-quit', (event) => {
+  // Dock → Quit is the only macOS path that shuts down the automation.
+  // Delay Electron's exit until its child Python process has received SIGTERM.
+  if (isQuitting) return;
+  event.preventDefault();
+  isQuitting = true;
+  alas.kill(() => app.quit());
 });
 
 
