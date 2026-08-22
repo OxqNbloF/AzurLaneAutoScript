@@ -991,7 +991,7 @@ class AlasGUI(Frame):
                 put_text(t("Gui.Remote.EntryPoint"), scope="remote_info")
                 entrypoint = RemoteAccess.get_entry_point()
                 if entrypoint:
-                    if State.electron:  # Prevent click into url in electron client
+                    if State.app:  # Prevent navigation away from the desktop app
                         put_text(entrypoint, scope="remote_info").style(
                             "text-decoration-line: underline"
                         )
@@ -1459,7 +1459,7 @@ def startup():
 def clearup():
     """
     Notice: Ensure run it before uvicorn reload app,
-    all process will NOT EXIT after close electron app.
+    all processes will NOT EXIT after closing the desktop app.
     """
     logger.info("Start clearup")
     RemoteAccess.kill_ssh_process()

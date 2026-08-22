@@ -57,7 +57,7 @@ class State:
 
     restart_event: threading.Event = None
     manager: SyncManager = None
-    electron: bool = False
+    app: bool = False
     theme: str = "default"
 
     @classmethod

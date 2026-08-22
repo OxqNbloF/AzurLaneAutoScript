@@ -1,41 +1,19 @@
-name: Tests
+name: Native macOS app
+
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'packages/**'
-      - 'tests/**'
-      - 'package-lock.json'
-      - '.github/workflows/tests.yml'
+    branches: [main]
   pull_request:
-    paths:
-      - 'packages/**'
-      - 'tests/**'
-      - 'package-lock.json'
-      - '.github/workflows/tests.yml'
-
-defaults:
-  run:
-    shell: 'bash'
 
 jobs:
-  e2e:
-    strategy:
-      matrix:
-        os: [ windows-latest ]
-
-    runs-on: ${{ matrix.os }}
-
+  build-and-test:
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 16 # Need for npm >=7.7
-          cache: 'npm'
-
-      # TODO: Install not all dependencies, but only those required for this workflow
-      - name: Install dependencies
-        run: npm ci
-
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run compile
       - run: npm test

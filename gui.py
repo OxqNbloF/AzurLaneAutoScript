@@ -37,9 +37,7 @@ def func(ev: threading.Event):
         action="store_true",
         help="Use jsdelivr cdn for pywebio static files (css, js). Self host cdn by default.",
     )
-    parser.add_argument(
-        "--electron", action="store_true", help="Runs by electron client."
-    )
+    parser.add_argument("--app", action="store_true", help="Runs inside a desktop app.")
     parser.add_argument(
         "--ssl-key", dest="ssl_key", type=str, help="SSL key file path for HTTPS support"
     )
@@ -59,18 +57,17 @@ def func(ev: threading.Event):
     ssl_key = args.ssl_key or State.deploy_config.WebuiSSLKey
     ssl_cert = args.ssl_cert or State.deploy_config.WebuiSSLCert
     ssl = ssl_key is not None and ssl_cert is not None
-    State.electron = args.electron
+    State.app = args.app
 
     logger.hr("Launcher config")
     logger.attr("Host", host)
     logger.attr("Port", port)
     logger.attr("SSL", ssl)
-    logger.attr("Electron", args.electron)
+    logger.attr("App", args.app)
     logger.attr("Reload", ev is not None)
 
-    if State.electron:
-        # https://github.com/LmeSzinc/AzurLaneAutoScript/issues/2051
-        logger.info("Electron detected, remove log output to stdout")
+    if State.app:
+        logger.info("Desktop app detected, remove log output to stdout")
         from module.logger import console_hdlr
         logger.removeHandler(console_hdlr)
 

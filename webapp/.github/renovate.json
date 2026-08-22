@@ -46,12 +46,6 @@
       ],
       "automerge": true,
       "groupName": "eslint"
-    },
-    {
-      "matchPackageNames": [
-        "electron"
-      ],
-      "separateMajorMinor": false
     }
   ],
   "rangeStrategy": "pin"
