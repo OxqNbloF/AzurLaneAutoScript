@@ -361,6 +361,12 @@ def put_arg_select(kwargs: T_Output_Kwargs) -> Output:
     options_label: List[str] = kwargs.pop("options_label", [])
     disabled: bool = kwargs.pop("disabled", False)
     _: str = kwargs.pop("invalid_feedback", None)
+    title_help = get_title_help(kwargs)
+
+    # bootstrap-select treats the native select's title attribute as a
+    # placeholder and prepends an empty option. We render the title separately,
+    # so don't forward it to the select element.
+    kwargs.pop("title", None)
 
     if disabled:
         option = [{
@@ -372,14 +378,14 @@ def put_arg_select(kwargs: T_Output_Kwargs) -> Output:
         option = [{
             "label": opt_label,
             "value": opt,
-            "select": opt == value,
+            "selected": opt == value,
         } for opt, opt_label in zip(options, options_label)]
     kwargs["options"] = option
 
     return put_scope(
         f"arg_container-select-{name}",
         [
-            get_title_help(kwargs),
+            title_help,
             put_select(**kwargs).style("--input--"),
         ],
     )
@@ -393,6 +399,11 @@ def put_arg_state(kwargs: T_Output_Kwargs) -> Output:
     _: str = kwargs.pop("invalid_feedback", None)
     bold: bool = value in kwargs.pop("option_bold", [])
     light: bool = value in kwargs.pop("option_light", [])
+    title_help = get_title_help(kwargs)
+
+    # Keep display-only titles out of native select attributes. Otherwise,
+    # bootstrap-select inserts a leading empty placeholder option.
+    kwargs.pop("title", None)
 
     option = [{
         "label": next((opt_label for opt, opt_label in zip(options, options_label) if opt == value), value),
@@ -410,7 +421,7 @@ def put_arg_state(kwargs: T_Output_Kwargs) -> Output:
     return put_scope(
         f"arg_container-select-{name}",
         [
-            get_title_help(kwargs),
+            title_help,
             put_select(**kwargs).style("--input--"),
         ],
     )
